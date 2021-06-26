@@ -4,15 +4,14 @@ import br.com.tiozinnub.mcpathfinder.pathfinder.Node;
 import br.com.tiozinnub.mcpathfinder.pathfinder.NodeType;
 import br.com.tiozinnub.mcpathfinder.pathfinder.Path;
 import br.com.tiozinnub.mcpathfinder.pathfinder.Pathfinder;
-import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.EntityType;
+import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.mob.PathAwareEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import software.bernie.geckolib3.core.IAnimatable;
 import software.bernie.geckolib3.core.PlayState;
@@ -21,13 +20,13 @@ import software.bernie.geckolib3.core.event.predicate.AnimationEvent;
 import software.bernie.geckolib3.core.manager.AnimationData;
 import software.bernie.geckolib3.core.manager.AnimationFactory;
 
-public class RobotEntity extends PathAwareEntity implements IAnimatable {
+public class RobotEntity extends PathingEntity implements IAnimatable {
     private final AnimationFactory factory = new AnimationFactory(this);
     private Pathfinder pathfinder;
     public Path currentPath;
     public int currentPathStep = 0;
 
-    public RobotEntity(EntityType<? extends PathAwareEntity> entityType, World world) {
+    public RobotEntity(EntityType<? extends PathingEntity> entityType, World world) {
         super(entityType, world);
         this.setMovementSpeed(0.1f);
 
@@ -49,33 +48,16 @@ public class RobotEntity extends PathAwareEntity implements IAnimatable {
     }
 
     @Override
+    public float getMovementSpeed() {
+        return 0.4f;
+    }
+
+    @Override
     protected ActionResult interactMob(PlayerEntity player, Hand hand) {
         if (!this.world.isClient && hand == Hand.MAIN_HAND) {
-            if (pathfinder == null)
-                pathfinder = new Pathfinder(getEntityWorld(), this, getBlockPos(), new BlockPos(66, 72, -20));
+            BlockPos target = new BlockPos(294, 75, -57);
 
-            if (currentPath == null) {
-                if (player.isSneaking())
-                    while (currentPath == null) {
-                        currentPath = pathfinder.tick();
-                    }
-                else
-                    currentPath = pathfinder.tick();
-
-
-
-                pathfinder.nodes.stream().filter(n -> !n.pos.equals(getBlockPos())).forEach(n -> {
-                    if (pathfinder.open.contains(n.id)) getEntityWorld().setBlockState(n.pos, currentPath == null ? Blocks.TORCH.getDefaultState() : Blocks.AIR.getDefaultState());
-                    if (pathfinder.closed.contains(n.id)) getEntityWorld().setBlockState(n.pos, currentPath == null ? Blocks.SOUL_TORCH.getDefaultState() : Blocks.AIR.getDefaultState());
-                });
-
-            } else {
-                currentPath.nodes.stream().filter(n -> !n.pos.equals(getBlockPos())).forEach(n -> {
-                    getEntityWorld().setBlockState(n.pos, Blocks.WHITE_CARPET.getDefaultState());
-                });
-
-
-            }
+            setTargetPos(target);
         }
 
         return super.interactMob(player, hand);

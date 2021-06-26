@@ -1,17 +1,28 @@
 package br.com.tiozinnub.mcpathfinder.pathfinder;
 
 public enum NodeType {
-    CARDINAL_WALK,
-    CARDINAL_JUMP,
-    CARDINAL_DROP_1,
-    CARDINAL_DROP_2,
-    CARDINAL_DROP_3,
-    DIAGONAL_WALK,
-    DIAGONAL_JUMP,
-    DIAGONAL_DROP_1,
-    DIAGONAL_DROP_2,
-    DIAGONAL_DROP_3,
-    CARDINAL_LEAP,
-    CARDINAL_LEAP_LONG,
-    NONE;
+    CARDINAL_WALK(true),
+    CARDINAL_JUMP(false),
+    CARDINAL_DROP_1(false),
+    CARDINAL_DROP_2(false),
+    CARDINAL_DROP_3(false),
+    DIAGONAL_WALK(true),
+    DIAGONAL_JUMP(false),
+    DIAGONAL_DROP_1(false),
+    DIAGONAL_DROP_2(false),
+    DIAGONAL_DROP_3(false),
+    CARDINAL_LEAP(false),
+    CARDINAL_LEAP_LONG(false),
+    NONE(false);
+
+    private final boolean canAnticipate;
+
+    NodeType(boolean anticipatable) {
+        this.canAnticipate = anticipatable;
+    }
+
+    public boolean canAnticipate() {
+        return canAnticipate;
+    }
+
 }

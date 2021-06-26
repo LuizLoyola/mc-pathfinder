@@ -14,32 +14,51 @@ import java.util.function.Consumer;
 public class Pathfinder {
     private final World world;
     private final LivingEntity entity;
-    private final BlockPos startPos;
-    private final BlockPos targetPos;
+    private BlockPos startPos;
+    private BlockPos targetPos;
     private final int maxDrop = 3;
     public List<Node> nodes;
     public List<Long> open;
     public List<Long> closed;
     private long nextNodeId;
 
-    public Pathfinder(World world, LivingEntity entity, BlockPos startPos, BlockPos targetPos) {
+    public Pathfinder(World world, LivingEntity entity) {
         this.world = world;
         this.entity = entity;
+        nextNodeId = 0;
+    }
+
+    public Path findPath(BlockPos startPos, BlockPos targetPos, int maxTicks) {
+        setUp(startPos, targetPos);
+
+        return multiTick(maxTicks);
+    }
+
+    public void setUp(BlockPos startPos, BlockPos targetPos) {
         this.startPos = startPos;
         this.targetPos = targetPos;
+
         nodes = new ArrayList<>();
         open = new ArrayList<>();
         closed = new ArrayList<>();
-        nextNodeId = 0;
+
         Node node = createNode(startPos, null);
 
         open.add(node.id);
     }
 
-    public Path tick() {
-        Node node;
+    public Path multiTick(int tries) {
+        for (int i = 0; i < tries; i++) {
+            Path path = tick();
+            if (path != null) return path;
+        }
 
-        node = getCheaperOpenNode(targetPos);
+        return null;
+    }
+
+    public Path tick() {
+        Node node = getCheaperOpenNode(targetPos);
+
         open.remove(node.id);
         closed.add(node.id);
 
@@ -80,23 +99,28 @@ public class Pathfinder {
         addNeighbor.accept(getDiagonalNeighbor(pos, pos.south(), pos.west(), pos.south().west()));
         addNeighbor.accept(getDiagonalNeighbor(pos, pos.west(), pos.north(), pos.north().west()));
 
-        addNeighbor.accept(getCardinalLeapNeighbor(pos, pos.north(), pos.north().north()));
-        addNeighbor.accept(getCardinalLeapNeighbor(pos, pos.east(), pos.east().east()));
-        addNeighbor.accept(getCardinalLeapNeighbor(pos, pos.south(), pos.south().south()));
-        addNeighbor.accept(getCardinalLeapNeighbor(pos, pos.west(), pos.west().west()));
 
-        addNeighbor.accept(getCardinalLongLeapNeighbor(pos, pos.north(), pos.north().north(), pos.north().north().north()));
-        addNeighbor.accept(getCardinalLongLeapNeighbor(pos, pos.east(), pos.east().east(), pos.east().east().east()));
-        addNeighbor.accept(getCardinalLongLeapNeighbor(pos, pos.south(), pos.south().south(), pos.south().south().south()));
-        addNeighbor.accept(getCardinalLongLeapNeighbor(pos, pos.west(), pos.west().west(), pos.west().west().west()));
+        // ignoring as it is unstable
+//        addNeighbor.accept(getCardinalLeapNeighbor(pos, pos.north(), pos.north().north()));
+//        addNeighbor.accept(getCardinalLeapNeighbor(pos, pos.east(), pos.east().east()));
+//        addNeighbor.accept(getCardinalLeapNeighbor(pos, pos.south(), pos.south().south()));
+//        addNeighbor.accept(getCardinalLeapNeighbor(pos, pos.west(), pos.west().west()));
+
+//        addNeighbor.accept(getCardinalLongLeapNeighbor(pos, pos.north(), pos.north().north(), pos.north().north().north()));
+//        addNeighbor.accept(getCardinalLongLeapNeighbor(pos, pos.east(), pos.east().east(), pos.east().east().east()));
+//        addNeighbor.accept(getCardinalLongLeapNeighbor(pos, pos.south(), pos.south().south(), pos.south().south().south()));
+//        addNeighbor.accept(getCardinalLongLeapNeighbor(pos, pos.west(), pos.west().west(), pos.west().west().west()));
 
         return neighbors;
     }
 
     private BlockPos getCardinalNeighbor(BlockPos pos, BlockPos p) {
+        if (isDanger(p)) return null;
+
         if (isPassable(p)) {
             // straight or down
             if (!enoughClearance(p)) return null;  // not enough clearance to go forward at all
+
 
             // block immediately down
             if (isSolidGround(p.down())) {
@@ -131,7 +155,15 @@ public class Pathfinder {
         return null;
     }
 
+    private boolean isDanger(BlockPos pos) {
+        BlockState state = world.getBlockState(pos);
+
+        return false;
+    }
+
     private BlockPos getDiagonalNeighbor(BlockPos pos, BlockPos left, BlockPos right, BlockPos p) {
+        if (isDanger(p)) return null;
+
         if (!isPassable(left) || !isPassable(right) || !enoughClearance(p))
             return null; //cant go diagonal if these are blocked
 
@@ -229,9 +261,9 @@ public class Pathfinder {
 
     private boolean isPassable(BlockPos pos) {
         BlockState state = world.getBlockState(pos);
+        if (state.isAir()) return true;
 
-
-        return state.isAir() || !state.isSolidBlock(world, pos);
+        return state.getCollisionShape(world, pos).isEmpty();
     }
 
     private Node createOrGetNode(BlockPos pos, Node parent) {
