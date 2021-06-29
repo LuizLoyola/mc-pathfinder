@@ -17,8 +17,8 @@ public enum NodeType {
 
     private final boolean canAnticipate;
 
-    NodeType(boolean anticipatable) {
-        this.canAnticipate = anticipatable;
+    NodeType(boolean canAnticipate) {
+        this.canAnticipate = canAnticipate;
     }
 
     public boolean canAnticipate() {
